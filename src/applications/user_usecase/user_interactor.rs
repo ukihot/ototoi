@@ -24,14 +24,20 @@ impl<R: UserRepository, O: UserOutputPort, F: UserFactory> UserInteractor<R, O, 
 impl<R: UserRepository, O: UserOutputPort, F: UserFactory> UserInputPort
     for UserInteractor<R, O, F>
 {
-    fn register_user(&self, id: u32, name: String, email: String) -> Result<(), String> {
-        self.factory
+    async fn register_user(&self, id: u32, name: String, email: String) -> Result<(), String> {
+        let user = self
+            .factory
             .create(id, name, email)
-            .map(|user| {
-                self.repository.save(&user);
-                let user_dto = UserDTO::from(&user);
-                self.output.show_user(&user_dto);
-            })
-            .map_err(|e| format!("Failed to register user: {}", e))
+            .map_err(|e| format!("Failed to create user: {}", e))?;
+
+        self.repository
+            .save(&user)
+            .await
+            .map_err(|e| format!("Failed to save user: {}", e))?;
+
+        let user_dto = UserDTO::from(&user);
+        self.output.show_user(&user_dto);
+
+        Ok(())
     }
 }

@@ -10,9 +10,10 @@ impl<I: UserInputPort> UserController<I> {
         Self { input_port }
     }
 
-    pub fn register(&self, user_dto: UserDTO) -> Result<UserRegisterResponse, String> {
+    pub async fn register(&self, user_dto: UserDTO) -> Result<UserRegisterResponse, String> {
         self.input_port
             .register_user(user_dto.id, user_dto.name, user_dto.email)
+            .await
             .map(|_| UserRegisterResponse {
                 success: true,
                 message: "User registered successfully.".to_string(),
